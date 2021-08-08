@@ -1,3 +1,4 @@
+from neat.reporting import StdOutReporter
 import pygame, neat, time, os, random
 pygame.font.init()
 
@@ -223,8 +224,24 @@ def draw_window(win, bird, pipes, base, score):
 
     pygame.display.update()
 
-def main():
-    bird = Bird(230,350)
+def main(genomes, config):
+    """
+    :genomes: NEAT requirment
+    "config: pass the config file for NEAT
+    """
+    nets = [] # keep track of bird that neural network is controlling
+    ge = []     # keep track of genomes to see how the brids are doing 
+    birds = []
+
+    for g in genomes:
+        net = neat.nn.FeedForwardNetwork(g, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))
+        g.fitness = 0
+        ge.append(g)
+
+
+    # bird = Bird(230,350)
     base = Base(730)
     pipes = [Pipe(650)]
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))  # create pygame window
@@ -238,22 +255,24 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        bird.move()
+        # bird.move()
 
         # create pipes and generate new pipes
         add_pipe = False
         rem = [] # list of pipes to remove
         score = 0
         for pipe in pipes:
-            if pipe.collide(bird):
-                pass
+            for bird in birds:
+                if pipe.collide(bird):
+                    pass
+                    
+                if not pipe.passed and pipe.x < bird.x:
+                    pipe.passed = True
+                    add_pipe = True
+
             # if pipe is off the screen
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 rem.append(pipe)
-            
-            if not pipe.passed and pipe.x < bird.x:
-                pipe.passed = True
-                add_pipe = True
 
             pipe.move()
         
@@ -265,14 +284,34 @@ def main():
             pipes.remove(r)
 
         # check if hit the floor
-        if bird.y + bird.img.get_height() >= 70:
-            pass
+        for bird in birds:
+            if bird.y + bird.img.get_height() >= 70:
+                pass
+
         base.move()
+
         draw_window(win, bird, pipes, base, score)
 
     pygame.quit()
     quit()
 
+def run():
+    # load config
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
+    # create population
+    population = neat.Population(config)
+
+    # give details of the generation
+    population.add_report(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter
+    population.add_reporter(stats)
+    # fitness determined based on how far the bird gets in the game
+    # call the main fn 50 times to run the bird
+    winner = population.run(main,50)
+
 
 if __name__ == "__main__":
     main()
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, "config-feedforward.txt")
+    run(config_path)
