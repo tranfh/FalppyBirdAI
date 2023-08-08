@@ -1,6 +1,8 @@
 # FlappyBirdAI
 
 ## Flappy Bird Game using AI!
+![flappybird](https://i.ytimg.com/vi/WSW-5m8lRMs/maxresdefault.jpg)
+
 
 This app is built using PyGame and NEAT (NeuroEvolution of Augmenting Topologies)
 
